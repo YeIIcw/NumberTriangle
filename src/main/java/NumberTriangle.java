@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.*;
 
 /**
  * This is the provided NumberTriangle class to be used in this coding task.
@@ -63,7 +64,14 @@ public class NumberTriangle {
      * Note: a NumberTriangle contains at least one value.
      */
     public void maxSumPath() {
-        // for fun [not for credit]:
+        if (isLeaf()) return;
+
+        if (left != null) left.maxSumPath();
+        if (right != null) right.maxSumPath();
+
+        root += Math.max(left != null ? left.root : 0, right != null ? right.root : 0);
+        left = null;
+        right = null;
     }
 
 
@@ -104,31 +112,36 @@ public class NumberTriangle {
      * @throws IOException may naturally occur if an issue reading the file occurs
      */
     public static NumberTriangle loadTriangle(String fname) throws IOException {
-        // open the file and get a BufferedReader object whose methods
-        // are more convenient to work with when reading the file contents.
         InputStream inputStream = NumberTriangle.class.getClassLoader().getResourceAsStream(fname);
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
 
+        List<List<NumberTriangle>> levels = new ArrayList<>();
+        String line;
 
-        // TODO define any variables that you want to use to store things
+        while ((line = br.readLine()) != null) {
+            String[] parts = line.trim().split("\\s+");
+            List<NumberTriangle> currentLevel = new ArrayList<>();
 
-        // will need to return the top of the NumberTriangle,
-        // so might want a variable for that.
-        NumberTriangle top = null;
+            for (String num : parts) {
+                currentLevel.add(new NumberTriangle(Integer.parseInt(num)));
+            }
 
-        String line = br.readLine();
-        while (line != null) {
-
-            // remove when done; this line is included so running starter code prints the contents of the file
-            System.out.println(line);
-
-            // TODO process the line
-
-            //read the next line
-            line = br.readLine();
+            levels.add(currentLevel);
         }
+
+        // Build triangle from bottom-up
+        for (int i = levels.size() - 2; i >= 0; i--) {
+            List<NumberTriangle> current = levels.get(i);
+            List<NumberTriangle> below = levels.get(i + 1);
+
+            for (int j = 0; j < current.size(); j++) {
+                current.get(j).setLeft(below.get(j));
+                current.get(j).setRight(below.get(j + 1));
+            }
+        }
+
         br.close();
-        return top;
+        return levels.get(0).get(0);  // Return the root node
     }
 
     public static void main(String[] args) throws IOException {
